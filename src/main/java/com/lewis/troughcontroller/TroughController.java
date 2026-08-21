@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.lewis.WaterApp;
 import com.pi4j.io.gpio.digital.DigitalInput;
 import com.pi4j.io.gpio.digital.DigitalOutput;
 
@@ -75,6 +76,9 @@ public class TroughController
                 troughValve.high();
                 lastValveOpenTS = LocalDateTime.now();
 
+                // Tell the android app
+                WaterApp.sendPushNotification("trough " + name, "on");
+
                 // Set a timer to turn off the valve if we run too long (i.e. float switch damaged)
                 Runnable task = () -> {
                     try {
@@ -85,6 +89,9 @@ public class TroughController
                         valveLockout = true;
 
                         troughValve.low();
+                        WaterApp.sendPushNotification("trough " + name, "off");
+
+                        WaterApp.sendPushNotification("error" + name, "Trough " + name + " filling too long. Locked out");
                     } catch (Exception e) {
                         logger.error("Error executing task: " + e.getMessage());
                     }
@@ -112,6 +119,8 @@ public class TroughController
                             logger.info("Opening fill valve based on delayed fill timer: " + name);
 
                             troughValve.high();
+
+                            WaterApp.sendPushNotification("trough " + name, "on");
                         }
                     } catch (Exception e) {
                         logger.error("Error executing task: " + e.getMessage());
@@ -120,7 +129,9 @@ public class TroughController
                 long delayTime = minBetweenFillsMins - elapsedMinutes;
                 delayFillTimer = scheduler.schedule(task, delayTime, TimeUnit.MINUTES);
 
-                logger.warn("Trough '" + name + "'' reporting empty but we just refilled recently. Delaying " + delayTime + " mins.");
+                logger.warn("Trough " + name + " reporting empty but we just refilled recently. Delaying " + delayTime + " mins.");
+                WaterApp.sendPushNotification("error" + name, "Trough " + name + " reporting empty but we just refilled recently. Delaying " + delayTime + " mins.");
+
             }
         }
     }
@@ -129,6 +140,9 @@ public class TroughController
         logger.info("Trough " + name + " is full. Turning off valve.");
 
         troughValve.low();
+
+        WaterApp.sendPushNotification("trough " + name, "off");
+
 
         // Cancel any fill timers we have running
         if (maxFillTimeTimer != null) {

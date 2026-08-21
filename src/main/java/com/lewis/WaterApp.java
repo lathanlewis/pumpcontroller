@@ -1,5 +1,7 @@
 package com.lewis;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,6 +11,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 import com.lewis.pumpcontroller.PumpController;
 import com.lewis.troughcontroller.TroughController;
 import com.pi4j.Pi4J;
@@ -17,9 +29,6 @@ import com.pi4j.io.gpio.digital.DigitalInput;
 import com.pi4j.io.gpio.digital.DigitalOutput;
 import com.pi4j.io.gpio.digital.PullResistance;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  * 
  *
@@ -27,6 +36,8 @@ import org.apache.logging.log4j.Logger;
 public class WaterApp 
 {
     private static final Logger logger = LogManager.getLogger(WaterApp.class);
+
+    private static final String FIREBASE_TOPIC = "pump-controller-updates";
 
     private static final String PG_URL = "jdbc:postgresql://localhost:5432/pumpdb";
     private static final String PG_USER = "postgres";
@@ -137,6 +148,21 @@ public class WaterApp
                 .provider("gpiod-digital-output")
                 .build());
 
+        //Init firebase messaging to send messages to android app
+        try (InputStream serviceAccount = getClass().getResourceAsStream("/pumpcontroller-android-firebase-adminsdk-fbsvc-30b066edbc.json")) {
+            if (serviceAccount == null) {
+                throw new IllegalArgumentException("Resource file not found!");
+            }
+            
+            FirebaseOptions options = new FirebaseOptions.Builder()
+            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+            .build();
+
+            FirebaseApp.initializeApp(options);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         new PumpController(conn, maxRunTimeMins, max2HourRunTimeMins, pumpRunState, pumpPowerSupply);
         new TroughController(TROUGH_1_NAME, maxFillTimeMins, minBetweenFillsMins, conn, trough1FillState, trough1Valve);
@@ -152,6 +178,31 @@ public class WaterApp
 
         scheduler.shutdown();
         pi4j.shutdown();
+    }
+
+    public static void sendPushNotification(String name, String state) {
+        // Step 1: Build the notification visual content
+        Notification notification = Notification.builder()
+                .setTitle(name)
+                .setBody(state)
+                .build();
+
+        // Step 2: Build the core message payload
+        Message message = Message.builder()
+                .setTopic(FIREBASE_TOPIC)
+                .setNotification(notification)
+                // .putData("click_action", "FLUTTER_NOTIFICATION_CLICK") // Optional custom data
+                // .putData("customKey", "customValue")                     // Optional custom data
+                //.setToken("cSxj3qcSTpu1XrBHNTQj29:APA91bG6a9vi6ivURJpCsiFumJrYlcRfsz-EIaXGauddH8QCQI5uPj-bCTwhNeICDRrHP_kOdFJBbF9w9YIdaSFCH50kLiEp7efq-BCx6yLvWFHA0Uuo35Y") // Target device registration token
+                .build();
+
+        try {
+            // Step 3: Send the message via Firebase Messaging
+            String response = FirebaseMessaging.getInstance().send(message);
+            System.out.println("Successfully sent message: " + response);
+        } catch (FirebaseMessagingException e) {
+            System.err.println("Error sending FCM message: " + e.getMessage());
+        }
     }
 
 

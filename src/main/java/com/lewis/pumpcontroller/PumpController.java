@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.lewis.WaterApp;
 import com.pi4j.io.gpio.digital.DigitalInput;
 import com.pi4j.io.gpio.digital.DigitalOutput;
 
@@ -59,6 +60,8 @@ public class PumpController
     protected void pumpOn() {
         logger.info("Well pump is running");
 
+        WaterApp.sendPushNotification("well pump", "on");
+
         // Write event to our DB
         try {
             PreparedStatement insertEvent = conn.prepareStatement("INSERT INTO events(eventSource, eventValue) VALUES(?,?)");
@@ -91,6 +94,9 @@ public class PumpController
     protected void pumpOff() {
         logger.info("Well pump is off");
 
+        WaterApp.sendPushNotification("well pump", "off");
+
+
         // Cancel our timer
         if (maxRunTimeTask != null) {
             maxRunTimeTask.cancel(true);
@@ -111,5 +117,10 @@ public class PumpController
     public void maxRunTimeThresholdReached() {
         logger.warn("Well pump has been running longer than: " + maxRunTimeMins + " mins. Locking out.");
         pumpPowerSupply.high();
+
+        WaterApp.sendPushNotification("well pump", "off");
+        WaterApp.sendPushNotification("error", "Well pump has been running longer than: \" + maxRunTimeMins + \" mins. Locking out.");
+
+
     }
 }
