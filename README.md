@@ -21,6 +21,7 @@ as just measuring run time length. We instead look for certain conditions:
 * Monitors for a Branch/Appliance leak by comparing total run time over a period of time.
 
 # HW
+* See KiCad wiring schematic in this directory
 * See [article](https://pdcastro.github.io/mains-io/) for using mains to switch low voltage signals for detecting pump on/off, using an optocoupler instead of reverse relay
 * Uses Optocoupler to detect 110VAC and output 3.3V (amazon history)
 * 24v AC coil 40A 2-pole contactor for disabling well pump, normally closed so pump still works if control circuit dies, hard to find nc, have to use lighting contactor (see amazon history: 32Amp 4 Pole NC Normally Closed, Lighting Contactor 24VAC Coil 934024 40A)
