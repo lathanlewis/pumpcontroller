@@ -1,3 +1,7 @@
+
+#google firebase creds
+src/main/resources/pumpcontroller-android-firebase-adminsdk-fbsvc-a1d24b7736.json
+
 # build output
 dist/
 

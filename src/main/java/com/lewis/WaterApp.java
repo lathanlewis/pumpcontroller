@@ -152,7 +152,7 @@ public class WaterApp
                 .build());
 
         //Init firebase messaging to send messages to android app
-        try (InputStream serviceAccount = getClass().getResourceAsStream("/pumpcontroller-android-firebase-adminsdk-fbsvc-30b066edbc.json")) {
+        try (InputStream serviceAccount = getClass().getResourceAsStream("/pumpcontroller-android-firebase-adminsdk-fbsvc-a1d24b7736.json")) {
             if (serviceAccount == null) {
                 throw new IllegalArgumentException("Resource file not found!");
             }
