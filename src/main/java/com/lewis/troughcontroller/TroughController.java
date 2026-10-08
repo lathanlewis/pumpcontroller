@@ -49,9 +49,13 @@ public class TroughController
         // Add listeners to our trough fill state inputs
         this.troughFillState.addListener(new TroughFillStateListener(this));
 
-        // If the trough is empty, go ahead and fill it up.
+        // If the trough is empty, go ahead and fill it up. Otherwise default our valve to off.
         if (this.troughFillState.isHigh()) {
             troughEmpty();
+        } else {
+                // high low is reversed on this relay
+            logger.info("Trough " + name + " is full on initialization. Defaulting valve to off.");
+            troughValve.high();
         }
 
     }
@@ -73,7 +77,9 @@ public class TroughController
             if (elapsedMinutes >= minBetweenFillsMins) {
                 logger.info("Turning on valve for trough: " + name);
 
-                troughValve.high();
+                // high low is reversed on this relay
+                troughValve.low();
+
                 lastValveOpenTS = LocalDateTime.now();
 
                 // Tell the android app
@@ -88,7 +94,9 @@ public class TroughController
                         logger.warn("Trough has been filling for too long. Locking out trough: " + name);
                         valveLockout = true;
 
-                        troughValve.low();
+                        // high low is reversed on this relay
+                        troughValve.high();
+
                         WaterApp.sendPushNotification("trough " + name, "off");
 
                         WaterApp.sendPushNotification("error" + name, "Trough " + name + " filling too long. Locked out");
@@ -118,7 +126,8 @@ public class TroughController
                         if (troughFillState.isHigh()) {
                             logger.info("Opening fill valve based on delayed fill timer: " + name);
 
-                            troughValve.high();
+                            // high low is reversed on this relay
+                            troughValve.low();
 
                             WaterApp.sendPushNotification("trough " + name, "on");
                         }
@@ -139,7 +148,8 @@ public class TroughController
     protected void troughFull() {
         logger.info("Trough " + name + " is full. Turning off valve.");
 
-        troughValve.low();
+        // high low is reversed on this relay
+        troughValve.high();
 
         WaterApp.sendPushNotification("trough " + name, "off");
 

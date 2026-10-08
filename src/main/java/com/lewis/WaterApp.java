@@ -27,6 +27,7 @@ import com.pi4j.Pi4J;
 import com.pi4j.context.Context;
 import com.pi4j.io.gpio.digital.DigitalInput;
 import com.pi4j.io.gpio.digital.DigitalOutput;
+import com.pi4j.io.gpio.digital.DigitalState;
 import com.pi4j.io.gpio.digital.PullResistance;
 
 /**
@@ -123,7 +124,7 @@ public class WaterApp
         trough1FillState = pi4j.create(DigitalInput.newConfigBuilder(pi4j)
                 .id("trough1FillState")
                 .address(PIN_TROUGH1_FILL_STATE) 
-                .pull(PullResistance.PULL_DOWN) // Use internal pull-down resistor
+                .pull(PullResistance.PULL_DOWN) // No signal means trough is full
                 .debounce(Long.valueOf(500000)) // 500ms
                 .provider("gpiod-digital-input")
                 .build());
@@ -132,12 +133,13 @@ public class WaterApp
                 .id("trough1Valve")
                 .address(PIN_TROUGH1_VALVE) 
                 .provider("gpiod-digital-output")
+                .initial(DigitalState.HIGH) // High means the relay is off
                 .build());
 
         trough2FillState = pi4j.create(DigitalInput.newConfigBuilder(pi4j)
                 .id("trough2FillState")
                 .address(PIN_TROUGH2_FILL_STATE) 
-                .pull(PullResistance.PULL_DOWN) // Use internal pull-down resistor
+                .pull(PullResistance.PULL_DOWN) // No signal means trough is full
                 .debounce(Long.valueOf(500000)) // 500ms
                 .provider("gpiod-digital-input")
                 .build());
@@ -146,6 +148,7 @@ public class WaterApp
                 .id("trough2Valve")
                 .address(PIN_TROUGH2_VALVE) 
                 .provider("gpiod-digital-output")
+                .initial(DigitalState.HIGH) // High means the relay is off
                 .build());
 
         //Init firebase messaging to send messages to android app
